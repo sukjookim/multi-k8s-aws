@@ -1,0 +1,126 @@
+app:
+  namespace: dev
+  imagePullSecret: "regcred"
+client:
+  replicaCount: 1
+  labels: client
+  containers:
+    name: "client-containers"
+    image:
+      name: e53ef920-kr1-registry.container.cloud.toast.com/client
+      tag: 0.2
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  service:
+    servicename: client-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 3000
+    internalPort: 3000
+    protocol: TCP
+    portName: http
+    nodePort:
+server:
+  replicaCount: 1
+  labels: server
+  containers:
+    name: "server-container"
+    image:
+      name: e53ef920-kr1-registry.container.cloud.toast.com/server
+      tag: 0.1
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  env:
+    redis:
+      REDIS_HOST: redis-cluster-ip-service
+      REDIS_PORT: '6379'
+    postgres:
+      PGUSER: postgres
+      PGHOST: postgres-cluster-ip-service
+      PGPORT: '5432'
+      PGDATABASE: postgres
+  service:
+    servicename: server-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 5000
+    internalPort: 5000
+    nodePort:
+    protocol: TCP
+    portName: server
+worker:
+  replicaCount: 1
+  labels: worker
+  containers:
+    name: "worker-continaer"
+    image:
+      name: e53ef920-kr1-registry.container.cloud.toast.com/worker
+      tag: 0.1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  env:
+    redis:
+      REDIS_HOST: redis-cluster-ip-service
+      REDIS_PORT: 6379
+postgres:
+  enabled: true
+  replicaCount: 1
+  labels: postgres
+  mountPath: /var/lib/postgresql/data
+  secret:
+    enabled: true
+    env:
+      PGPASSWORD: admin1234
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  containers:
+    name: postgres
+    image: postgres
+    tag: "9.4"
+    port: 5432
+  service:
+    servicename: postgres-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 5432
+    internalPort: 5432
+    nodePort:
+    portName: db
+redis:
+  replicaCount: 1
+  labels: redis
+  containers:
+    name: redis
+    image: redis
+    tag: latest
+    port: 6379
+  service:
+    servicename: redis-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 6379
+    internalPort: 6379
+    nodePort:
+    portName: memorydb

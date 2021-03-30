@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: {{ .Values.app.namespace }}
+spec:
+  replicas: {{ .Values.redis.replicaCount }}
+  selector:
+    matchLabels:
+      component: {{ .Values.redis.labels }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.redis.labels }}
+    spec:
+      containers:
+        - name: {{ .Values.redis.containers.name }}
+          image: "{{ .Values.redis.containers.image }}:{{ .Values.redis.containers.tag }}"
+          ports:
+            - containerPort: {{ .Values.redis.containers.port }}

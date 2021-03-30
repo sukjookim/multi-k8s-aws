@@ -1,0 +1,138 @@
+app:
+  namespace: "multi-k8s"
+  imagePullSecret: "regcred"
+client:
+  replicaCount: 5
+  labels: client
+  containers:
+    name: "client-containers"
+    image:
+      name: 133.186.144.198:8082/multi-k8s/20200618/client
+      tag: 72eefbb4
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  service:
+    servicename: client-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 3000
+    internalPort: 3000
+    protocol: TCP
+    portName: http
+    nodePort:
+server:
+  replicaCount: 5
+  labels: server
+  containers:
+    name: "server-container"
+    image:
+      name: 133.186.144.198:8082/multi-k8s/20200618/server
+      tag: 54b3819b
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  env:
+    redis:
+      REDIS_HOST: redis-cluster-ip-service
+      REDIS_PORT: '6379'
+    postgres:
+      PGUSER: postgres
+      PGHOST: postgres-cluster-ip-service
+      PGPORT: '5432'
+      PGDATABASE: postgres
+  service:
+    servicename: server-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 5000
+    internalPort: 5000
+    nodePort:
+    protocol: TCP
+    portName: server
+worker:
+  replicaCount: 3
+  labels: worker
+  containers:
+    name: "worker-continaer"
+    image:
+      name: 133.186.144.198:8082/multi-k8s/20200618/worker
+      tag: 06972cfa
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  env:
+    redis:
+      REDIS_HOST: redis-cluster-ip-service
+      REDIS_PORT: 6379
+postgres:
+  enabled: true
+  replicaCount: 1
+  labels: postgres
+  nodeName: k8s-cloud-moa-default-w-e6rkismpcqn4-node-0
+  mountPath: /var/lib/postgresql/data
+  secret:
+    enabled: true
+    env:
+      PGPASSWORD: admin1234
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+  containers:
+    name: postgres
+    image: postgres
+    tag: latest
+    port: 5432
+  service:
+    servicename: postgres-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 5432
+    internalPort: 5432
+    nodePort:
+    portName: db
+  pv:
+    name: database-persistent-volume
+    storage: 2Gi
+    mode:
+    - ReadWriteOnce
+    mountPoint: local
+    hostPath: /postgres
+  pvc:
+    name: database-persistent-volume-claim
+    mode:
+    - ReadWriteOnce
+redis:
+  replicaCount: 1
+  labels: redis
+  containers:
+    name: redis
+    image: redis
+    tag: latest
+    port: 6379
+  service:
+    servicename: redis-cluster-ip-service
+    type: ClusterIP
+    clusterIP:
+    externalPort: 6379
+    internalPort: 6379
+    nodePort:
+    portName: memorydb

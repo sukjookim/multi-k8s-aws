@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deployment
+  namespace: {{ .Values.app.namespace }}
+spec:
+  replicas: {{ .Values.client.replicaCount }}
+  selector:
+    matchLabels:
+      component: {{ .Values.client.labels }} 
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.client.labels }}
+    spec:
+      imagePullSecrets:
+      - name: {{ .Values.app.imagePullSecret }}
+      containers:
+        - name: {{ .Values.client.containers.name }}
+          image: "{{ .Values.client.containers.image.name }}:{{ .Values.client.containers.image.tag }}"
+        {{- with .Values.client.resources }}
+          resources:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+          ports:
+            - containerPort: {{ .Values.client.containers.port }}

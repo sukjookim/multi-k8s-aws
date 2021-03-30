@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  namespace: {{ .Values.app.namespace }}
+spec:
+  replicas: {{ .Values.postgres.replicaCount }}
+  selector:
+    matchLabels:
+      component: {{ .Values.postgres.labels }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.postgres.labels }}
+    spec:
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+      containers:
+        - name: {{ .Values.postgres.containers.name }}
+          image: "{{ .Values.postgres.containers.image }}:{{ .Values.postgres.containers.tag }}"
+          {{- with .Values.postgres.resources }}
+          resources:
+{{ toYaml . | indent 12}}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.postgres.containers.port }}    
+          volumeMounts:
+          {{- if eq .Values.postgres.pv.mountPoint "local "}}        
+            - name: postgres-storage
+              mountPath: {{ .Values.postgres.mountPath }}
+              subPath: postgres
+          {{- end }}
+          env:
+          {{- if .Values.postgres.secret.enabled }}        
+          {{- $secret_name := "pgpassword" }}
+          {{- range $name, $value := .Values.postgres.secret.env }} 
+          {{- if not ( empty $value) }}       
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret_name }}
+                  key: {{ $name | quote }}
+          {{- end }} 
+          {{- end }}
+          {{- end }}

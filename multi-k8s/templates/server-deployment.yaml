@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+  namespace: {{ .Values.app.namespace }}
+spec:
+  replicas: {{ .Values.server.replicaCount }}
+  selector:
+    matchLabels:
+      component: {{ .Values.server.labels }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.server.labels }}
+    spec:
+      imagePullSecrets:
+      - name: {{ .Values.app.imagePullSecret }}
+      containers:
+        - name: {{ .Values.server.containers.name }}
+          image: "{{ .Values.server.containers.image.name }}:{{ .Values.server.containers.image.tag }}"
+        {{- with .Values.client.resources }}
+          resources:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+          ports:
+          - containerPort: {{ .Values.server.containers.port }}
+          env:  
+{{- range $name, $value := .Values.server.env.redis }}
+{{- if not (empty $value) }}
+          - name: {{ $name | quote }}
+            value: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- range $name, $value := .Values.server.env.postgres }}
+{{- if not (empty $value) }}
+          - name: {{ $name | quote }}
+            value: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.secret.enabled }}
+{{- $secret_name := "pgpassword" }}
+{{- range $name, $value := .Values.postgres.secret.env }}
+{{- if not ( empty $value) }}
+          - name: {{ $name | quote }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secret_name }}
+                key: {{ $name | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

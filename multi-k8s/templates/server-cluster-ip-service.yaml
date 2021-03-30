@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.server.service.servicename }}
+  name: {{ .Values.server.service.servicename }}
+{{- else }}
+  name: server-{{ include "multi-k8s.fullname" . }}
+{{- end}}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  type: {{ .Values.server.service.type }}
+  {{- if eq .Values.server.service.type "ClusterIP" }}
+  {{- if .Values.server.service.clusterIP }}
+  clusterIP: {{ .Values.server.service.clusterIP}}
+  {{- end }}
+  {{- end }}
+  selector:
+    component: {{ .Values.server.labels }}
+  ports:
+    - port: {{ .Values.server.service.externalPort }}
+      targetPort: {{ .Values.server.service.internalPort }}
+{{- if (and (eq .Values.server.service.type "NodePort") (not (empty .Values.server.service.nodePort))) }}
+      nodePort: {{ .Values.server.service.nodePort }}
+{{- end }}
+      protocol: {{ .Values.server.service.protocol }}
+      name: {{ .Values.server.service.portName }}
